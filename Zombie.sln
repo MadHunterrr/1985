@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2015
+# Visual Studio 2017
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zombie.Plugins", "Zombie.Plugins.csproj", "{728A1276-FE27-9169-F169-BB014611BC0D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zombie", "Zombie.csproj", "{6962A435-2C06-DF27-143B-B2976E4C5C49}"

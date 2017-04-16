@@ -9,19 +9,24 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CapsuleCollider))]
 public class PlayerController : MonoBehaviour
 {
+
     #region Declaration
     private Character Char;
     private Rigidbody Rig;
     private Vector3 vert;
     private Vector3 horiz;
+    [SerializeField]
     private InventoryUI inventoryUI;
     public Weapon EquipedWeapon;
+
+
 
     //Physics
     [SerializeField]
     private bool isGround = true;
     //сохраняет предыдущее состояние(если вы пригнули, то здесь оттобразиться что перед этим вы стояли на земле или наоборот)
     private bool playerDown = false;
+    public bool IsPlayable;
     public Vector3 Point1;
     public Vector3 Point2;
 
@@ -103,15 +108,15 @@ public class PlayerController : MonoBehaviour
     public float magnitude;
     public float fixedUpdate;
     public float update;
-   
+
     void ChangeAIM()
     {
-        EquipedWeapon.AIM.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,BaseDispersion);
-        EquipedWeapon.AIM.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,BaseDispersion);
+        EquipedWeapon.AIM.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, BaseDispersion);
+        EquipedWeapon.AIM.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, BaseDispersion);
     }
     void Otdacha()
     {
-        CameraRot *= Quaternion.Euler(- EquipedWeapon.cam_dispersion, 0, 0);
+        CameraRot *= Quaternion.Euler(-EquipedWeapon.cam_dispersion, 0, 0);
         if (EquipedWeapon.cam_dispersion < EquipedWeapon.cam_max_angle)
             EquipedWeapon.cam_dispersion += EquipedWeapon.cam_dispersion_inc;
 
@@ -120,6 +125,7 @@ public class PlayerController : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        IsPlayable = true;
         fs = ChangeAIM;
         otdacha = Otdacha;
         //Cursor.lockState = CursorLockMode.Locked;
@@ -136,73 +142,74 @@ public class PlayerController : MonoBehaviour
         GameObject go = new GameObject("Inventory");
         go.AddComponent<Inventory>();
         go.transform.parent = transform;
-        go.transform.localPosition = Vector3.down*300;
+        go.transform.localPosition = Vector3.down * 300;
         Char.Invent = go.GetComponent<Inventory>();
-        inventoryUI = FindObjectOfType<InventoryUI>();
-
     }
 
     private void FixedUpdate()
     {
         
-        //isGround = Physics.Raycast(transform.position, -transform.up,1.1f);
-        //Debug.DrawLine(transform.position, transform.position - transform.up);
-        RaycastHit hit;
-        
-        isGround = Physics.SphereCast(transform.position - transform.up * 0.25f, 0.38f, Vector3.down, out hit, 0.38f);
+            RaycastHit hit;
+
+            isGround = Physics.SphereCast(transform.position - transform.up * 0.25f, 0.38f, Vector3.down, out hit, 0.38f);
 
 
-        //---------START TEST BLOCK----------//
-        velocity = Rig.velocity;
-        magnitude = Rig.velocity.magnitude;
-        fixedUpdate = Time.fixedDeltaTime;
+            //---------START TEST BLOCK----------//
+            velocity = Rig.velocity;
+            magnitude = Rig.velocity.magnitude;
+            fixedUpdate = Time.fixedDeltaTime;
 
-        //---------END TEST BLOCK------------//
+            //---------END TEST BLOCK------------//
 
-        //если мы на земле, то выполняем следющие действия
-        if (isGround)
-        {
-
-            Movement();
-            JumpModification = 0;
-            if (Input.GetButtonDown("Jump"))
+            //если мы на земле, то выполняем следющие действия
+            if (isGround)
             {
-                Rig.AddForce(transform.up * 1000 * 15, ForceMode.Force);
-                JumpModification = 5;
-                ChangeAIM();
+
+                Movement();
+                JumpModification = 0;
+                if (Input.GetButtonDown("Jump"))
+                {
+                    Rig.AddForce(transform.up * 1000 * 15, ForceMode.Force);
+                    JumpModification = 5;
+                    ChangeAIM();
+                }
+
             }
 
-        }
-
-        //Пускаем райкаст для проверки возможности взаемодействия с объектами
-        RaycastHit CheckObject;
-        if(Physics.Raycast(Cam.transform.position,Cam.transform.forward,out CheckObject,2))
-        {
-            if(CheckObject.collider.GetComponent<IActiveable>()!=null)
+            //Пускаем райкаст для проверки возможности взаемодействия с объектами
+            RaycastHit CheckObject;
+            if (Physics.Raycast(Cam.transform.position, Cam.transform.forward, out CheckObject, 2))
             {
-                IActiveable curFocusObject = CheckObject.collider.GetComponent<IActiveable>();
-                Collider curFocusObjectGO = CheckObject.collider;
-                if (curFocusObject.isReady)
+                if (CheckObject.collider.GetComponent<IActiveable>() != null)
                 {
-                    ActiveUI.SetActive(true);
-                    if (curFocusObjectGO.tag == "Item")
+                    IActiveable curFocusObject = CheckObject.collider.GetComponent<IActiveable>();
+                    Collider curFocusObjectGO = CheckObject.collider;
+                    if (curFocusObject.isReady)
                     {
-                        ActiveUI.GetComponentInChildren<Text>().text = "E - взять";
+                        ActiveUI.SetActive(true);
+                        if (curFocusObjectGO.tag == "Item")
+                        {
+                            ActiveUI.GetComponentInChildren<Text>().text = "E - взять";
+                        }
+                        else if (curFocusObjectGO.tag == "Human")
+                        {
+                            ActiveUI.GetComponentInChildren<Text>().text = "E - говорить";
+                        }
+                        else if (curFocusObjectGO.tag == "Doors")
+                        {
+                            ActiveUI.GetComponentInChildren<Text>().text = "E - Открыть";
+                        }
+                        if (Input.GetButtonDown("Active"))
+                        {
+                            curFocusObject.OnActive(Char.Invent.gameObject);
+                        }
                     }
-                    else if (curFocusObjectGO.tag == "Human")
+                    else if (ActiveUI.activeInHierarchy)
                     {
-                        ActiveUI.GetComponentInChildren<Text>().text = "E - говорить";
-                    }
-                    else if (curFocusObjectGO.tag == "Doors")
-                    {
-                        ActiveUI.GetComponentInChildren<Text>().text = "E - Открыть";
-                    }
-                    if(Input.GetButtonDown("Active"))
-                    {
-                        curFocusObject.OnActive(Char.Invent.gameObject);
+                        ActiveUI.SetActive(false);
                     }
                 }
-                else if(ActiveUI.activeInHierarchy)
+                else if (ActiveUI.activeInHierarchy)
                 {
                     ActiveUI.SetActive(false);
                 }
@@ -211,56 +218,73 @@ public class PlayerController : MonoBehaviour
             {
                 ActiveUI.SetActive(false);
             }
-        }
-        else if (ActiveUI.activeInHierarchy)
-        {
-            ActiveUI.SetActive(false);
-        }
+        
     }
     private void Update()
     {
-        Vector3 newCameraPosition;
-        newCameraPosition = FirstPersonCameraPosition.localPosition;
-
-        newCameraPosition.y = FirstPersonCameraPosition.localPosition.y - offset;
-        newCameraPosition.x = FirstPersonCameraPosition.localPosition.x;
-        newCameraPosition.z = FirstPersonCameraPosition.localPosition.z;
-
-        Cam.transform.localPosition = newCameraPosition;
-        if (!playerDown && isGround)
+            InputCheck();
+        if (IsPlayable)
         {
-            StartCoroutine(JumpCamera());
+            Vector3 newCameraPosition;
+            newCameraPosition = FirstPersonCameraPosition.localPosition;
+            newCameraPosition.y = FirstPersonCameraPosition.localPosition.y - offset;
+            newCameraPosition.x = FirstPersonCameraPosition.localPosition.x;
+            newCameraPosition.z = FirstPersonCameraPosition.localPosition.z;
+
+            Cam.transform.localPosition = newCameraPosition;
+            if (!playerDown && isGround)
+            {
+                StartCoroutine(JumpCamera());
+            }
+            playerDown = isGround;
+
+            update = Time.deltaTime;
+            Rotation();
+            PistolAnimation();
         }
-        playerDown = isGround;
-
-        InputCheck();
-        update = Time.deltaTime;
-        Rotation();
-        PistolAnimation();
-
     }
 
     #region Input and Movement
     void InputCheck()
     {
-        if(Input.GetButtonDown("Inventory"))
+        if (Input.GetButtonDown("Inventory"))
         {
-            if(!inventoryUI.IsActive)
-            inventoryUI.Activate(Char.Invent);
+            if (!inventoryUI.gameObject.activeInHierarchy)
+            {
+                inventoryUI.gameObject.SetActive(true);
+                inventoryUI.Activate(Char.Invent);
+                IsPlayable = false;
+                //если прицеливаемся при открытии инвентаря, то переводим прицел в исходящее положение
+                if(Char.isAIM == true)
+                {
+                    if (coroutine != null)
+                        StopCoroutine(coroutine);
+                    coroutine = StartCoroutine(AIMFOVDown());
+                    Char.isAIM = false;
+                    Char.CurrentMovement = PrevState;
+                    EquipedWeapon.AIM.gameObject.SetActive(true);
+                    HandAnimator.SetBool("IsAIM", false);
+                }
+            }
             else
+            {
                 inventoryUI.DeActivate();
+                inventoryUI.gameObject.SetActive(false);
+                IsPlayable = true;
+            }
         }
 
-        if (Input.GetButton("Fire1"))
+        //---------------
+        if (Input.GetButton("Fire1") && IsPlayable)
         {
-            if (HandAnimator.GetBool("isReady")&& EquipedWeapon.CurMagSize>0)
+            if (HandAnimator.GetBool("isReady") && EquipedWeapon.CurMagSize > 0)
             {
                 HandAnimator.SetTrigger("Shoot");
-                StartCoroutine(EquipedWeapon.Shoot(0.32f / (EquipedWeapon.SPM / 60), Char.isAIM, HorizontalAxis,fs, otdacha));
+                StartCoroutine(EquipedWeapon.Shoot(0.32f / (EquipedWeapon.SPM / 60), Char.isAIM, HorizontalAxis, fs, otdacha));
             }
 
         }
-        if (Input.GetButtonDown("Fire2"))
+        if (Input.GetButtonDown("Fire2") && IsPlayable)
         {
             if (Char.CurrentMovement == Character.Movement.Run || Char.CurrentMovement == Character.Movement.Sprint)
             {
@@ -282,12 +306,10 @@ public class PlayerController : MonoBehaviour
             Char.CurrentMovement = PrevState;
             EquipedWeapon.AIM.gameObject.SetActive(true);
         }
-        if (isGround)
+//-----------------------------------------------------
+        if (isGround && IsPlayable)
         {
-
-            //Переключение состояний(режимов) передвижения
-
-
+            
             //бежать мы сможем только тогда, когда мы не целимся
             if (!Char.isAIM)
             {
@@ -387,12 +409,12 @@ public class PlayerController : MonoBehaviour
         if (Smooth)
         {
             Rig.velocity = Vector3.Lerp(Rig.velocity, vert + horiz, SmoothSensitivity * Time.deltaTime);
-            SpeedModification = Rig.velocity.magnitude*3;
+            SpeedModification = Rig.velocity.magnitude * 3;
         }
         else
         {
             Rig.velocity = vert + horiz;
-            SpeedModification = Rig.velocity.magnitude*3;
+            SpeedModification = Rig.velocity.magnitude * 3;
         }
         ChangeAIM();
 

@@ -9,20 +9,45 @@ public class Item : MonoBehaviour, IActiveable
     public string Name;
     public string Description;
     public int Cost;
-    public int Count;
-    public Texture Icon;
+    public uint Count = 1;
+    public Sprite Icon;
     public Vector2 iconPos;
     public Vector2 iconSize;
     public bool isReady { get; set; }
+    #endregion
 
     public void OnActive(GameObject go)
     {
-        go.GetComponent<Inventory>().Items.Add(this);        
-        transform.parent = go.transform;
-        transform.position = go.transform.position;
+        CheckInventory(go.GetComponent<Inventory>());
         isReady = false;
     }
-    #endregion
+
+    void CheckInventory(Inventory inv)
+    {
+        if (inv.Items.Count == 0)
+        {
+            inv.Items.Add(this);
+            transform.parent = inv.transform;
+            transform.position = inv.transform.position;
+        }
+        else
+        {
+            foreach (Item item in inv.Items)
+            {
+                if (item.Name == Name)
+                {
+                    item.Count += Count;
+                    Destroy(gameObject);
+                }
+                else
+                {
+                    inv.Items.Add(this);
+                    transform.parent = inv.transform;
+                    transform.position = inv.transform.position;
+                }
+            }
+        }
+    }
 
     // Use this for initialization
     void Start()
