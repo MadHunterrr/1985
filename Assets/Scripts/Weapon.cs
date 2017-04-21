@@ -90,14 +90,14 @@ public class Weapon : MonoBehaviour
         Equiper = baseParametr;
         baseParametr.HandAnimator.SetFloat("AttackSpeed", SPM / 60);
     }
-    public IEnumerator Shoot(float delay, bool isAIM, float horizontal, ForShoot fs , ForShoot otdacha)
+
+    public IEnumerator Shoot(float delay, bool isAIM, float horizontal, ForShoot fs, ForShoot otdacha )
     {
 
         yield return new WaitForSeconds(delay);
         if (relaxRoutine != null)
             StopCoroutine(relaxRoutine);
         fs();
-        otdacha();
         ASource.clip = ShootSound;
         ASource.Play();
         bool readyraycast;
@@ -121,7 +121,7 @@ public class Weapon : MonoBehaviour
         {
             if (hit.collider.GetComponent<IDamageable>() != null)
             {
-                if (!hit.collider.GetComponent<IDamageable>().isDead)
+                if (!hit.collider.GetComponent<IDamageable>().IsDead)
                 {
                     if (aimHitRoutine != null)
                         StopCoroutine(aimHitRoutine);
@@ -170,16 +170,14 @@ public class Weapon : MonoBehaviour
        relaxRoutine = StartCoroutine(RelaxCamera(fs));
         //уменьшение патронов в магазине и перезарядка
         CurMagSize--;
-        if(CurMagSize==0)
-        {
-            Reload();
-        }
+        otdacha();
+        
 
     }
 
-    public void Reload()
+    public void Reload( int BulletCount)
     {
-
+        CurMagSize += BulletCount;
     }
 
     IEnumerator RelaxCamera(ForShoot fs)

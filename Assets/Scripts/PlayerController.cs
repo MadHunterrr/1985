@@ -83,13 +83,12 @@ public class PlayerController : MonoBehaviour
 
     Coroutine coroutine;
     public float hor;
-    public Weapon.ForShoot fs;
-    public Weapon.ForShoot otdacha;
+    Weapon.ForShoot fs;
 
-
-    // интерфейс
+    // интерфейсt
     [Header("UI")]
     public GameObject ActiveUI;
+    private GameObject AmmoUI;
 
     //dispersion
     [Header("Dispersion")]
@@ -99,7 +98,9 @@ public class PlayerController : MonoBehaviour
     {
         get
         {
-            return (EquipedWeapon.cur_fire_dispersion / 0.014f * 30 + SpeedModification * 2 + JumpModification);
+            return (Input.GetAxis("Vertical")!=0 || Input.GetAxis("Horizontal") != 0)?
+                (EquipedWeapon.cur_fire_dispersion / 0.014f * 30 + SpeedModification * 2 + JumpModification):
+                (EquipedWeapon.cur_fire_dispersion / 0.014f * 30  + JumpModification);
         }
     }
 
@@ -108,26 +109,31 @@ public class PlayerController : MonoBehaviour
     public float magnitude;
     public float fixedUpdate;
     public float update;
-
+    #endregion
+   
+    #region UI
     void ChangeAIM()
     {
         EquipedWeapon.AIM.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, BaseDispersion);
         EquipedWeapon.AIM.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, BaseDispersion);
     }
-    void Otdacha()
-    {
-        CameraRot *= Quaternion.Euler(-EquipedWeapon.cam_dispersion, 0, 0);
-        if (EquipedWeapon.cam_dispersion < EquipedWeapon.cam_max_angle)
-            EquipedWeapon.cam_dispersion += EquipedWeapon.cam_dispersion_inc;
 
+    public void DrawHealth()
+    {
+
+    }
+
+    public void DrawAmmo()
+    {
+        Text tx = AmmoUI.GetComponentInChildren<Text>();
+        tx.text = EquipedWeapon.CurMagSize + "/" +FindAllAmmo();
     }
     #endregion
     // Use this for initialization
     void Start()
     {
+        AmmoUI = GameObject.FindGameObjectWithTag("AmmoUI");
         IsPlayable = true;
-        fs = ChangeAIM;
-        otdacha = Otdacha;
         //Cursor.lockState = CursorLockMode.Locked;
         //Cursor.visible = false;
         Char = GetComponent<Character>();
@@ -144,69 +150,70 @@ public class PlayerController : MonoBehaviour
         go.transform.parent = transform;
         go.transform.localPosition = Vector3.down * 300;
         Char.Invent = go.GetComponent<Inventory>();
+        //fs - это делегат, хранящий в себе функции, которые нам понадоблятся для стрельбы, 
+        //и вызываются один раз за стрельбу. Это отдача, отрисовки изменения патронов
+        fs = Otdacha;
+        fs += DrawAmmo;
+
+        DrawAmmo();
     }
 
     private void FixedUpdate()
     {
-        
-            RaycastHit hit;
 
-            isGround = Physics.SphereCast(transform.position - transform.up * 0.25f, 0.38f, Vector3.down, out hit, 0.38f);
+        RaycastHit hit;
+
+        isGround = Physics.SphereCast(transform.position - transform.up * 0.25f, 0.38f, Vector3.down, out hit, 0.38f);
 
 
-            //---------START TEST BLOCK----------//
-            velocity = Rig.velocity;
-            magnitude = Rig.velocity.magnitude;
-            fixedUpdate = Time.fixedDeltaTime;
+        //---------START TEST BLOCK----------//
+        velocity = Rig.velocity;
+        magnitude = Rig.velocity.magnitude;
+        fixedUpdate = Time.fixedDeltaTime;
 
-            //---------END TEST BLOCK------------//
+        //---------END TEST BLOCK------------//
 
-            //если мы на земле, то выполняем следющие действия
-            if (isGround)
+        //если мы на земле, то выполняем следющие действия
+        if (isGround)
+        {
+
+            Movement();
+            JumpModification = 0;
+            if (Input.GetButtonDown("Jump"))
             {
-
-                Movement();
-                JumpModification = 0;
-                if (Input.GetButtonDown("Jump"))
-                {
-                    Rig.AddForce(transform.up * 1000 * 15, ForceMode.Force);
-                    JumpModification = 5;
-                    ChangeAIM();
-                }
-
+                Rig.AddForce(transform.up * 1000 * 15, ForceMode.Force);
+                JumpModification = 5;
+                ChangeAIM();
             }
 
-            //Пускаем райкаст для проверки возможности взаемодействия с объектами
-            RaycastHit CheckObject;
-            if (Physics.Raycast(Cam.transform.position, Cam.transform.forward, out CheckObject, 2))
+        }
+
+        //Пускаем райкаст для проверки возможности взаемодействия с объектами
+        RaycastHit CheckObject;
+        if (Physics.Raycast(Cam.transform.position, Cam.transform.forward, out CheckObject, 2))
+        {
+            if (CheckObject.collider.GetComponent<IActiveable>() != null)
             {
-                if (CheckObject.collider.GetComponent<IActiveable>() != null)
+                IActiveable curFocusObject = CheckObject.collider.GetComponent<IActiveable>();
+                Collider curFocusObjectGO = CheckObject.collider;
+                if (curFocusObject.isReady)
                 {
-                    IActiveable curFocusObject = CheckObject.collider.GetComponent<IActiveable>();
-                    Collider curFocusObjectGO = CheckObject.collider;
-                    if (curFocusObject.isReady)
+                    ActiveUI.SetActive(true);
+                    if (curFocusObjectGO.tag == "Item")
                     {
-                        ActiveUI.SetActive(true);
-                        if (curFocusObjectGO.tag == "Item")
-                        {
-                            ActiveUI.GetComponentInChildren<Text>().text = "E - взять";
-                        }
-                        else if (curFocusObjectGO.tag == "Human")
-                        {
-                            ActiveUI.GetComponentInChildren<Text>().text = "E - говорить";
-                        }
-                        else if (curFocusObjectGO.tag == "Doors")
-                        {
-                            ActiveUI.GetComponentInChildren<Text>().text = "E - Открыть";
-                        }
-                        if (Input.GetButtonDown("Active"))
-                        {
-                            curFocusObject.OnActive(Char.Invent.gameObject);
-                        }
+                        ActiveUI.GetComponentInChildren<Text>().text = "E - взять";
                     }
-                    else if (ActiveUI.activeInHierarchy)
+                    else if (curFocusObjectGO.tag == "Human")
                     {
-                        ActiveUI.SetActive(false);
+                        ActiveUI.GetComponentInChildren<Text>().text = "E - говорить";
+                    }
+                    else if (curFocusObjectGO.tag == "Doors")
+                    {
+                        ActiveUI.GetComponentInChildren<Text>().text = "E - Открыть";
+                    }
+                    if (Input.GetButtonDown("Active"))
+                    {
+                        curFocusObject.OnActive(Char.gameObject);
                     }
                 }
                 else if (ActiveUI.activeInHierarchy)
@@ -218,11 +225,16 @@ public class PlayerController : MonoBehaviour
             {
                 ActiveUI.SetActive(false);
             }
-        
+        }
+        else if (ActiveUI.activeInHierarchy)
+        {
+            ActiveUI.SetActive(false);
+        }
+
     }
     private void Update()
     {
-            InputCheck();
+        InputCheck();
         if (IsPlayable)
         {
             Vector3 newCameraPosition;
@@ -244,6 +256,61 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Функция проверяет, есть ли в инвентаре патроны нужного калибра для перезарядки
+    /// </summary>
+    /// <returns>Возвращает количество патронов, которые будут заряжены в магазин</returns>
+    int CheckAmmo()
+    {
+        foreach (var i in Char.Invent.Items)
+        {
+
+            if (i is Ammo)
+            {
+                Ammo tItem = (Ammo)i;//tempItem
+                if (tItem.ammoType == EquipedWeapon.ammo)
+                {
+                    if (i.Count >= EquipedWeapon.MagSize - EquipedWeapon.CurMagSize)
+                    {
+                        i.Count -= (uint)(EquipedWeapon.MagSize - EquipedWeapon.CurMagSize);
+                        return EquipedWeapon.MagSize - EquipedWeapon.CurMagSize;
+                    }
+                    else if (i.Count < EquipedWeapon.MagSize - EquipedWeapon.CurMagSize && i.Count > 0)
+                    {
+                        int temp = (int)i.Count;
+                        i.Count = 0;
+                        Char.Invent.Items.Remove(i);
+                        //Destroy(i.gameObject); //падает производительность
+                        return temp;
+                    }
+                }
+            }
+
+        }
+        return 0;
+    }
+    /// <summary>
+    /// Функция ищет количество патронов, которые есть в инвентаре и подходит для текущего оружия
+    /// </summary>
+    /// <returns>Количество патронов в инвентаре</returns>
+    int FindAllAmmo()
+    {
+        foreach (var i in Char.Invent.Items)
+        {
+            if (i is Ammo)
+            {
+                Ammo tItem = (Ammo)i;//tempItem
+                if (tItem.ammoType == EquipedWeapon.ammo)
+                {
+                    return (int)tItem.Count;
+                }
+            }
+        }
+
+
+        return 0;
+    }
+
     #region Input and Movement
     void InputCheck()
     {
@@ -255,7 +322,7 @@ public class PlayerController : MonoBehaviour
                 inventoryUI.Activate(Char.Invent);
                 IsPlayable = false;
                 //если прицеливаемся при открытии инвентаря, то переводим прицел в исходящее положение
-                if(Char.isAIM == true)
+                if (Char.isAIM == true)
                 {
                     if (coroutine != null)
                         StopCoroutine(coroutine);
@@ -280,7 +347,14 @@ public class PlayerController : MonoBehaviour
             if (HandAnimator.GetBool("isReady") && EquipedWeapon.CurMagSize > 0)
             {
                 HandAnimator.SetTrigger("Shoot");
-                StartCoroutine(EquipedWeapon.Shoot(0.32f / (EquipedWeapon.SPM / 60), Char.isAIM, HorizontalAxis, fs, otdacha));
+                StartCoroutine(EquipedWeapon.Shoot(0.32f / (EquipedWeapon.SPM / 60), Char.isAIM, HorizontalAxis, ChangeAIM, fs));
+                
+            }
+            else if (HandAnimator.GetBool("isReady") && EquipedWeapon.CurMagSize == 0)
+            {
+                EquipedWeapon.Reload(CheckAmmo());
+                DrawAmmo();
+
             }
 
         }
@@ -306,10 +380,10 @@ public class PlayerController : MonoBehaviour
             Char.CurrentMovement = PrevState;
             EquipedWeapon.AIM.gameObject.SetActive(true);
         }
-//-----------------------------------------------------
+        //-----------------------------------------------------
         if (isGround && IsPlayable)
         {
-            
+
             //бежать мы сможем только тогда, когда мы не целимся
             if (!Char.isAIM)
             {
@@ -422,6 +496,13 @@ public class PlayerController : MonoBehaviour
     #endregion
 
     #region Camera Dynamic Move
+    void Otdacha()
+    {
+        CameraRot *= Quaternion.Euler(-EquipedWeapon.cam_dispersion, 0, 0);
+        if (EquipedWeapon.cam_dispersion < EquipedWeapon.cam_max_angle)
+            EquipedWeapon.cam_dispersion += EquipedWeapon.cam_dispersion_inc;
+
+    }
 
     Quaternion ClampRotation(Quaternion rot)
     {

@@ -8,6 +8,6 @@ interface IDamageable
     void TakeDamage(float damage);
     void TakeDamage();
     void Destruction();
-    bool isDead { get; }
+    bool IsDead { get; }
 }
 

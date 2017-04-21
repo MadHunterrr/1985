@@ -13,7 +13,7 @@ public class DamageableParts : MonoBehaviour, IDamageable
     public float HeadMultiply = 1.8f;
     Character Char;
 
-    public bool isDead
+    public bool IsDead
     {
         get
         {
@@ -40,7 +40,7 @@ public class DamageableParts : MonoBehaviour, IDamageable
 
     public void TakeDamage(float damage)
     {
-        if (!isDead)
+        if (!IsDead)
         {
             switch (BodyPart)
             {
@@ -64,7 +64,7 @@ public class DamageableParts : MonoBehaviour, IDamageable
                     break;
             }
         }
-        if (isDead)
+        if (IsDead)
         {
             Destruction();
         }

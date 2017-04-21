@@ -7,6 +7,8 @@ public class InventoryUI : MonoBehaviour
     GameObject[] ItemsUI;
     [SerializeField]
     private RectTransform Content;
+    [SerializeField]
+    private GameObject tooltip;
     Canvas cnv;
     
     float iconPosY = 0;
@@ -51,6 +53,11 @@ public class InventoryUI : MonoBehaviour
         cntText.resizeTextMaxSize = 20;
         cntText.resizeTextMinSize = 10;
         cntText.alignment = TextAnchor.LowerRight;
+        //-----Add ItemIcon Component
+        ItemIcon ic = ItemsUI[i].AddComponent<ItemIcon>();
+        ic.tooltip = tooltip;
+        ic.item = VisInventory.Items[i];
+
     }
 
     void DrawCount(int i)
