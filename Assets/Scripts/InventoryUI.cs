@@ -11,7 +11,6 @@ public class InventoryUI : MonoBehaviour
     private GameObject tooltip;
     Canvas cnv;
     
-    float iconPosY = 0;
     //size inventory Nx6
     private void Start()
     {
@@ -46,7 +45,7 @@ public class InventoryUI : MonoBehaviour
         cntRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 20 * cnv.scaleFactor);
         Text cntText = cnt.AddComponent<Text>();
         cntText.text = "x"+VisInventory.Items[i].Count.ToString();
-        cntText.color = Color.black;
+        cntText.color = Color.white;
         Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
         cntText.font = ArialFont;
         cntText.resizeTextForBestFit = true;

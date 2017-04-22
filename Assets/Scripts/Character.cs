@@ -52,15 +52,4 @@ public class Character : MonoBehaviour
 
     [Header("Параметры анимации")]
     public bool isAIM = false;
-    // Use this for initialization
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
 }

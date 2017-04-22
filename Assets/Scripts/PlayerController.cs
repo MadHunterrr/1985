@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,10 +8,18 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Character))]
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IDamageable
 {
 
     #region Declaration
+
+    public bool IsDead
+    {
+        get
+        {
+            return Char.CurHealth <= 0;
+        }
+    }
     private Character Char;
     private Rigidbody Rig;
     private Vector3 vert;
@@ -89,6 +98,8 @@ public class PlayerController : MonoBehaviour
     [Header("UI")]
     public GameObject ActiveUI;
     private GameObject AmmoUI;
+    private Image HealthBar;
+    private Image EnduranceBar;
 
     //dispersion
     [Header("Dispersion")]
@@ -98,9 +109,9 @@ public class PlayerController : MonoBehaviour
     {
         get
         {
-            return (Input.GetAxis("Vertical")!=0 || Input.GetAxis("Horizontal") != 0)?
-                (EquipedWeapon.cur_fire_dispersion / 0.014f * 30 + SpeedModification * 2 + JumpModification):
-                (EquipedWeapon.cur_fire_dispersion / 0.014f * 30  + JumpModification);
+            return (Input.GetAxis("Vertical") != 0 || Input.GetAxis("Horizontal") != 0) ?
+                (EquipedWeapon.cur_fire_dispersion / 0.014f * 30 + SpeedModification * 2 + JumpModification) :
+                (EquipedWeapon.cur_fire_dispersion / 0.014f * 30 + JumpModification);
         }
     }
 
@@ -110,7 +121,7 @@ public class PlayerController : MonoBehaviour
     public float fixedUpdate;
     public float update;
     #endregion
-   
+
     #region UI
     void ChangeAIM()
     {
@@ -120,13 +131,14 @@ public class PlayerController : MonoBehaviour
 
     public void DrawHealth()
     {
-
+        HealthBar.fillAmount = Char.CurHealth / Char.Health;
+        
     }
 
     public void DrawAmmo()
     {
         Text tx = AmmoUI.GetComponentInChildren<Text>();
-        tx.text = EquipedWeapon.CurMagSize + "/" +FindAllAmmo();
+        tx.text = EquipedWeapon.CurMagSize + "/" + FindAllAmmo();
     }
     #endregion
     // Use this for initialization
@@ -154,7 +166,8 @@ public class PlayerController : MonoBehaviour
         //и вызываются один раз за стрельбу. Это отдача, отрисовки изменения патронов
         fs = Otdacha;
         fs += DrawAmmo;
-
+        HealthBar = GameObject.FindGameObjectWithTag("HealthBar").GetComponent<Image>();
+        EnduranceBar = GameObject.FindGameObjectWithTag("EnduranceBar").GetComponent<Image>();
         DrawAmmo();
     }
 
@@ -348,12 +361,17 @@ public class PlayerController : MonoBehaviour
             {
                 HandAnimator.SetTrigger("Shoot");
                 StartCoroutine(EquipedWeapon.Shoot(0.32f / (EquipedWeapon.SPM / 60), Char.isAIM, HorizontalAxis, ChangeAIM, fs));
-                
+
             }
             else if (HandAnimator.GetBool("isReady") && EquipedWeapon.CurMagSize == 0)
             {
-                EquipedWeapon.Reload(CheckAmmo());
-                DrawAmmo();
+                int temp = CheckAmmo();
+                if (temp > 0)
+                {
+                    HandAnimator.SetBool("isReady", false);
+                    HandAnimator.SetTrigger("IsEmpty");
+                    StartCoroutine(EquipedWeapon.Reload(temp, EquipedWeapon.ReloadSound.length, DrawAmmo));
+                }
 
             }
 
@@ -379,6 +397,16 @@ public class PlayerController : MonoBehaviour
             Char.isAIM = false;
             Char.CurrentMovement = PrevState;
             EquipedWeapon.AIM.gameObject.SetActive(true);
+        }
+        else if (Input.GetButtonDown("Reload") && HandAnimator.GetBool("isReady") && EquipedWeapon.CurMagSize != EquipedWeapon.MagSize)
+        {
+            int temp = CheckAmmo();
+            if (temp > 0)
+            {
+                HandAnimator.SetBool("isReady", false);
+                HandAnimator.SetTrigger("IsEmpty");
+                StartCoroutine(EquipedWeapon.Reload(temp, EquipedWeapon.ReloadSound.length, DrawAmmo));
+            }
         }
         //-----------------------------------------------------
         if (isGround && IsPlayable)
@@ -659,5 +687,31 @@ public class PlayerController : MonoBehaviour
 
     }
     #endregion
+    #region IDamageable
+    public void TakeDamage(float damage)
+    {
+        if (!IsDead)
+        {
+            Char.CurHealth -= damage - (damage * ((float)Char.TorsoArmor / 100));
+            DrawHealth();
+        }
 
+        if (IsDead)
+        {
+            Destruction();
+        }
+    }
+
+    public void TakeDamage()
+    {
+        Char.CurHealth -= 10;
+        DrawHealth();
+    }
+
+    public void Destruction()
+    {
+        Char.CurHealth = 0;
+        DrawHealth();
+    }
+    #endregion
 }

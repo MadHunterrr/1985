@@ -175,9 +175,13 @@ public class Weapon : MonoBehaviour
 
     }
 
-    public void Reload( int BulletCount)
+    public IEnumerator Reload(int BulletCount, float delay, ForShoot redrawAmmoCount)
     {
+        ASource.clip = ReloadSound;
+        ASource.Play();
+        yield return new WaitForSeconds(delay);
         CurMagSize += BulletCount;
+        redrawAmmoCount();
     }
 
     IEnumerator RelaxCamera(ForShoot fs)
