@@ -52,4 +52,13 @@ public class Character : MonoBehaviour
 
     [Header("Параметры анимации")]
     public bool isAIM = false;
+
+    //Static function
+    public static Vector3 Direction(Vector3 target, Vector3 hero)
+    {
+        Vector3 temp = target - hero;
+        float ftemp = temp.magnitude;
+        return temp / ftemp;
+    }
+
 }

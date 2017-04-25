@@ -97,6 +97,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     // интерфейсt
     [Header("UI")]
     public GameObject ActiveUI;
+    [SerializeField]
     private GameObject AmmoUI;
     private Image HealthBar;
     private Image EnduranceBar;

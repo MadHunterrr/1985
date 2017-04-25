@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -12,18 +13,17 @@ public class EnemyZombie : MonoBehaviour
     {
         public Vector3[] path = null;
     }
-  
-    Character Char;
+  [HideInInspector]
+    public Character Char;
     Animator Anim;
-    NavMeshAgent Nav;
+    [HideInInspector]
+    public NavMeshAgent Nav;
     [SerializeField]
     MoveMap RoadMap;
     [SerializeField]
-    ZombieAI zombieAI;
-    [SerializeField]
     private Rigidbody[] Ragdoll;
-
-
+    bool isDeath = false;
+    public Character target;
 
 
 
@@ -34,21 +34,16 @@ public class EnemyZombie : MonoBehaviour
         Anim = GetComponent<Animator>();
         Nav = GetComponent<NavMeshAgent>();
         Ragdoll = GetComponentsInChildren<Rigidbody>();
-        CheckMove();
+        //CheckMove();
     }
 
-    private void FixedUpdate()
-    {
-        if (Nav.enabled && !Nav.hasPath)
-        {
-            CheckMove();
-        }
-    }
-
+   
 
     public void Kill()
     {
         Nav.SetDestination(transform.position);
+        GetComponent<ZombieAI>().ClearTarget();
+        isDeath = true;
         Nav.enabled = false;
         Anim.enabled = false;
         foreach (var rd in Ragdoll)
@@ -56,6 +51,15 @@ public class EnemyZombie : MonoBehaviour
             rd.isKinematic = false;
         }
 
+    }
+
+    private void Update()
+    {
+        if(!isDeath)
+        {
+            if (target != null)
+                Nav.SetDestination(target.transform.position);
+        }
     }
 
     public void CheckMove()
@@ -78,9 +82,11 @@ public class EnemyZombie : MonoBehaviour
     }
 
     public void Move(Vector3 vec)
-    {
-        Nav.speed = Char.Speed;
-        Nav.SetDestination(vec);
+    {if (!isDeath)
+        {
+            Nav.speed = Char.Speed;
+            Nav.SetDestination(vec);
+        }
     }
 
     public void Attack()
