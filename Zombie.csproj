@@ -103,6 +103,8 @@
     <Compile Include="Assets\Scripts\DamageRegion.cs" />
     <Compile Include="Assets\Scripts\DamageableParts.cs" />
     <Compile Include="Assets\Scripts\EnemyZombie.cs" />
+    <Compile Include="Assets\Scripts\Environment.cs" />
+    <Compile Include="Assets\Scripts\EnvironmentManager.cs" />
     <Compile Include="Assets\Scripts\IActiveable.cs" />
     <Compile Include="Assets\Scripts\IDamageable.cs" />
     <Compile Include="Assets\Scripts\Inventory.cs" />

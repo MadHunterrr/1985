@@ -141,6 +141,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Editor\DamageablePartsEditor.cs" />
+    <Compile Include="Assets\Scripts\Editor\EnvironmentEditorScript.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\EffectExamples\Shared\Shaders\SurfaceShader_VC.shader" />
