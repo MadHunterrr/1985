@@ -8,18 +8,12 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Character))]
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
-public class PlayerController : MonoBehaviour, IDamageable
+public class PlayerController : MonoBehaviour
 {
 
     #region Declaration
 
-    public bool IsDead
-    {
-        get
-        {
-            return Char.CurHealth <= 0;
-        }
-    }
+
     private Character Char;
     private Rigidbody Rig;
     private Vector3 vert;
@@ -688,31 +682,5 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     }
     #endregion
-    #region IDamageable
-    public void TakeDamage(float damage)
-    {
-        if (!IsDead)
-        {
-            Char.CurHealth -= damage - (damage * ((float)Char.TorsoArmor / 100));
-            DrawHealth();
-        }
 
-        if (IsDead)
-        {
-            Destruction();
-        }
-    }
-
-    public void TakeDamage()
-    {
-        Char.CurHealth -= 10;
-        DrawHealth();
-    }
-
-    public void Destruction()
-    {
-        Char.CurHealth = 0;
-        DrawHealth();
-    }
-    #endregion
 }

@@ -35,10 +35,10 @@ public class DamageableParts : MonoBehaviour, IDamageable
 
     public void TakeDamage()
     {
-        TakeDamage(10);
+        TakeDamage(10, Weapon.DamageType.balistic);
     }
 
-    public void TakeDamage(float damage)
+    public void TakeDamage(float damage, Weapon.DamageType damageType)
     {
         if (!IsDead)
         {

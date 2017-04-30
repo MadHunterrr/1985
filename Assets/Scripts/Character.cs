@@ -1,9 +1,20 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Character : MonoBehaviour
+[RequireComponent(typeof(Animator))]
+public class Character : MonoBehaviour , IDamageable
 {
+
+    public bool IsDead
+    {
+        get
+        {
+            return CurHealth <= 0;
+        }
+    }
+
     [HideInInspector]
     public Inventory Invent;
     public enum Movement { Run, Walk, Crouch, Sprint}
@@ -25,7 +36,17 @@ public class Character : MonoBehaviour
     [Header("Общее здоровье")]
     public float Health = 100;
     public float CurHealth = 100;
+    public float Stamina = 100;
+    public float CurStamina = 100;
+    public List<EffectList> currentEffects;
+    [Serializable]
+    public class EffectList
+    {
 
+        public Effect effects;
+        public Coroutine effectRoutine;
+
+    }
     //----Здоровье частей тела---- от 0 до 100-----//
     [Header("Здоровья разных частей тела")]
     public float HeadHealth = 100;
@@ -34,6 +55,16 @@ public class Character : MonoBehaviour
     public float LeftHeandHealth = 100;
     public float RightLegHealth = 100;
     public float LeftLegHealth = 100;
+
+    [Header("Сопротевление")]
+    [Range(0, 85)]
+    public float FireProtection;
+    [Range(0, 85)]
+    public float ColdProtection;
+    [Range(0, 85)]
+    public float PoisonProtection;
+    [Range(0, 100)]
+    public float VirusProtection;
 
     //----Защита частей тела---- от 0 до 85-----//
     [Header("Броня для разных частей тела")]
@@ -53,6 +84,23 @@ public class Character : MonoBehaviour
     [Header("Параметры анимации")]
     public bool isAIM = false;
 
+    [Header("AI")]
+    public float meleeDamage = 5;
+    public float dayVisibleDistance = 30;
+    public float nightVisibleDistance = 15;
+    public float dayListenDistance;
+    public float nightListenDistance;
+    public float attackDistance = 2;
+
+    [Header("Components")]
+    public Animator Anim;
+    public PlayerController pl;
+
+    private void Awake()
+    {
+        Anim = GetComponent<Animator>();
+        pl = GetComponent<PlayerController>();
+    }
     //Static function
     public static Vector3 Direction(Vector3 target, Vector3 hero)
     {
@@ -61,4 +109,72 @@ public class Character : MonoBehaviour
         return temp / ftemp;
     }
 
+    public void AddEffect(Effect effect)
+    {
+        for (int i =0;i<currentEffects.Count;i++)
+        {
+            if (currentEffects[i].effects == effect)
+            {
+                StopCoroutine(currentEffects[i].effectRoutine);
+                currentEffects.RemoveAt(i);
+                break;
+            }
+        }
+        currentEffects.Add(new EffectList {effects = effect });
+        currentEffects[currentEffects.Count-1].effectRoutine = StartCoroutine(AddEffectRoutine(effect));
+    }
+    public IEnumerator AddEffectRoutine(Effect effect)
+    {
+        float t = Time.time;
+        while(Time.time<t+effect.Duration)
+        {
+            yield return new WaitForSeconds(1);
+            foreach(var temp in effect.TargetType)
+            {
+                if(temp == Effect.TypeOfTarget.health)
+                {
+                    TakeDamage(effect.Damage, effect.DamageType);
+                }
+                else if(temp == Effect.TypeOfTarget.stamina)
+                {
+                    StaminaDamage(effect.Damage);
+                }
+
+            }
+        }
+    }
+
+
+    #region IDamageable
+    public void TakeDamage(float damage, Weapon.DamageType damageType)
+    {
+        if (!IsDead)
+        {   
+            CurHealth -= damage - (damage * ((float)TorsoArmor / 100));
+            if (pl != null) pl.DrawHealth();
+        }
+
+        if (IsDead)
+        {
+            Destruction();
+        }
+    }
+
+    public void TakeDamage()
+    {
+        CurHealth -= 1;
+        if (pl != null) pl.DrawHealth();
+    }
+
+    public void Destruction()
+    {
+        CurHealth = 0;
+        if (pl != null) pl.DrawHealth();
+    }
+#endregion
+
+    void StaminaDamage(float damage)
+    {
+        CurStamina -= damage;
+    }
 }

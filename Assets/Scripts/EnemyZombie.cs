@@ -5,7 +5,6 @@ using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(Character))]
-[RequireComponent(typeof(Animator))]
 public class EnemyZombie : MonoBehaviour
 {
     [Serializable]
@@ -13,9 +12,8 @@ public class EnemyZombie : MonoBehaviour
     {
         public Vector3[] path = null;
     }
-  [HideInInspector]
+    [HideInInspector]
     public Character Char;
-    Animator Anim;
     [HideInInspector]
     public NavMeshAgent Nav;
     [SerializeField]
@@ -27,17 +25,18 @@ public class EnemyZombie : MonoBehaviour
 
 
 
+
+
     // Use this for initialization
     void Start()
     {
         Char = GetComponent<Character>();
-        Anim = GetComponent<Animator>();
         Nav = GetComponent<NavMeshAgent>();
         Ragdoll = GetComponentsInChildren<Rigidbody>();
         //CheckMove();
     }
 
-   
+
 
     public void Kill()
     {
@@ -45,7 +44,7 @@ public class EnemyZombie : MonoBehaviour
         GetComponent<ZombieAI>().ClearTarget();
         isDeath = true;
         Nav.enabled = false;
-        Anim.enabled = false;
+        Char.Anim.enabled = false;
         foreach (var rd in Ragdoll)
         {
             rd.isKinematic = false;
@@ -55,10 +54,21 @@ public class EnemyZombie : MonoBehaviour
 
     private void Update()
     {
-        if(!isDeath)
+        if (!isDeath)
         {
             if (target != null)
-                Nav.SetDestination(target.transform.position);
+            {
+                if (Char.Anim.GetBool("IsReady"))
+                {
+                    Nav.SetDestination(target.transform.position);
+
+                    if (Vector3.Distance(transform.position, target.transform.position) < Char.attackDistance)
+                    {
+                        Attack();
+                    }
+
+                }
+            }
         }
     }
 
@@ -82,7 +92,8 @@ public class EnemyZombie : MonoBehaviour
     }
 
     public void Move(Vector3 vec)
-    {if (!isDeath)
+    {
+        if (!isDeath)
         {
             Nav.speed = Char.Speed;
             Nav.SetDestination(vec);
@@ -91,6 +102,8 @@ public class EnemyZombie : MonoBehaviour
 
     public void Attack()
     {
-        Anim.SetTrigger("Attack");
+        //transform.rotation = Quaternion.LookRotation(target.transform.position-transform.position);
+        //Nav.SetDestination(transform.position);
+        Char.Anim.SetTrigger("Attack");
     }
 }

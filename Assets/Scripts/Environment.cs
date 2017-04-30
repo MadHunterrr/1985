@@ -4,6 +4,19 @@ using UnityEngine;
 
 public class Environment : MonoBehaviour
 {
+    public enum DayTime { morning, day, evening, night}
+
+    public DayTime TimeOfDay
+    {
+        get
+        {
+            if (timeHour >= 6 && timeHour <= 10) return DayTime.morning;
+            else if (timeHour >10 && timeHour < 18) return DayTime.day;
+            else if (timeHour >= 18 && timeHour <22) return DayTime.evening;
+            else return DayTime.night;
+        }
+    }
+
     [Range(0, 23)]
     public byte timeHour;
     [Range(0, 23)]

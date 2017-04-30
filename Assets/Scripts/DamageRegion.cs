@@ -8,22 +8,10 @@ using UnityEngine;
 public class DamageRegion : MonoBehaviour
 {
     public Character parent;
-    [SerializeField]
-    private bool isReady;
+    public Weapon.DamageType damageType = Weapon.DamageType.balistic;
     [SerializeField]
     private float damage = 5;
-    public bool IsReady
-    {
-        get
-        {
-            return isReady;
-        }
 
-        set
-        {
-            isReady = value;
-        }
-    }
 
     public float Damage
     {
@@ -42,7 +30,7 @@ public class DamageRegion : MonoBehaviour
     {
         if (parent != null)
         {
-            IDamageable[] dmg = GetComponentsInChildren<IDamageable>();
+            IDamageable[] dmg = parent.GetComponentsInChildren<IDamageable>();
 
             foreach (var i in dmg)
             {
@@ -55,14 +43,22 @@ public class DamageRegion : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (IsReady)
+        IDamageable ad = collision.gameObject.GetComponent<IDamageable>();
+        if (ad != null)
         {
-            if (collision.gameObject.GetComponent<IDamageable>() != null)
+            if (!ad.IsDead)
             {
-                IDamageable ad = collision.gameObject.GetComponent<IDamageable>();
-                if (!ad.IsDead && NotAlies(ad))
+                if (parent != null && !parent.Anim.GetBool("IsReady"))
                 {
-                    ad.TakeDamage(Damage);
+                    if (NotAlies(ad))
+                    {
+                        ad.TakeDamage(parent.meleeDamage,damageType);
+                    }
+
+                }
+                else if(parent == null)
+                {
+                    ad.TakeDamage(Damage,damageType);
                 }
             }
         }

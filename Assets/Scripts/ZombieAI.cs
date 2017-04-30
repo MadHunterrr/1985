@@ -9,19 +9,15 @@ public class ZombieAI : MonoBehaviour
     [SerializeField]
     public LayerMask mask;
     public Transform VisStart;
-
-    public float curDistance;
-    public float dayVisibleDistance = 30;
-    public float nightVisibleDistance;
-    public float dayListenDistance;
-    public float nightListenDistance;
-    public float attackDistance;
+    
 
     public float rayCount = 10;
     public float angle = 12;
 
     public float FindEnemyDelay = 0.5f;
     Coroutine findEnemyCoroutine;
+    Environment envi;
+    private Character thisChar;
     IEnumerator UpdateRay()
     {
         while (true)
@@ -36,21 +32,28 @@ public class ZombieAI : MonoBehaviour
         for (int i = 0; i < 2; i++)
         {
             RaycastHit hit;
-            if (Physics.Raycast(VisStart.position - (transform.up * 0.9f*i), dir, out hit, dayVisibleDistance,mask.value))
+            //проверка не время дня. Если день или утро, то дальность видимости больше, если ночь - то меньше
+            float dist;
+            if (envi.TimeOfDay == Environment.DayTime.morning || envi.TimeOfDay == Environment.DayTime.day)
+                dist = thisChar.dayVisibleDistance;
+            else
+                dist = thisChar.nightVisibleDistance;
+
+            if (Physics.Raycast(VisStart.position - (transform.up * 0.9f * i), dir, out hit, dist, mask.value))
             {
                 if (hit.collider.GetComponent<PlayerController>() != null)
                 {
-                    Debug.DrawLine(VisStart.position - (transform.up * 0.9f*i), hit.point, Color.red);
+                    Debug.DrawLine(VisStart.position - (transform.up * 0.9f * i), hit.point, Color.red);
                     SetTarget(hit.collider.GetComponent<Character>());
                 }
                 else
                 {
-                    Debug.DrawLine(VisStart.position - (transform.up * 0.9f*i), hit.point, Color.blue);
+                    Debug.DrawLine(VisStart.position - (transform.up * 0.9f * i), hit.point, Color.blue);
                 }
             }
             else
             {
-                Debug.DrawRay(VisStart.position - (transform.up * 0.9f*i), dir * dayVisibleDistance, Color.green);
+                Debug.DrawRay(VisStart.position - (transform.up * 0.9f * i), dir * dist, Color.green);
             }
         }
     }
@@ -99,9 +102,11 @@ public class ZombieAI : MonoBehaviour
     void Start()
     {
         zombie = GetComponent<EnemyZombie>();
+        envi = FindObjectOfType<Environment>();
+        thisChar = GetComponent<Character>();
         findEnemyCoroutine = StartCoroutine(UpdateRay());
     }
 
-  
+
 
 }

@@ -7,11 +7,13 @@ using UnityEngine;
 public class Weapon : MonoBehaviour
 {
     #region Declaration
+    public enum DamageType { balistic, fire, cold, poison, virus }
     [Header("Базовые параметры")]
+    public DamageType damageType = DamageType.balistic;
     [Tooltip("Тип боеприпасов, которые использует даное оружие")]
     public Ammo.AmmoType ammo;
     public float Damage = 5;
-    [Range(1,5)]
+    [Range(1, 5)]
     public float hitImpulse = 1;
     [Tooltip("Выстрелов в минуту(Shoot per minute)")]
     public float SPM = 60;
@@ -91,7 +93,7 @@ public class Weapon : MonoBehaviour
         baseParametr.HandAnimator.SetFloat("AttackSpeed", SPM / 60);
     }
 
-    public IEnumerator Shoot(float delay, bool isAIM, float horizontal, ForShoot fs, ForShoot otdacha )
+    public IEnumerator Shoot(float delay, bool isAIM, float horizontal, ForShoot fs, ForShoot otdacha)
     {
 
         yield return new WaitForSeconds(delay);
@@ -108,7 +110,7 @@ public class Weapon : MonoBehaviour
                 readyraycast = Physics.Raycast(BulletSpawnPoint.position, BulletSpawnPoint.forward + new Vector3(Random.Range(-cur_fire_dispersion_AIM, cur_fire_dispersion_AIM), Random.Range(-cur_fire_dispersion_AIM, cur_fire_dispersion_AIM)), out hit, MaxDistance);
             else
                 readyraycast = Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward + new Vector3(Random.Range(-cur_fire_dispersion_AIM, cur_fire_dispersion_AIM), Random.Range(-cur_fire_dispersion_AIM, cur_fire_dispersion_AIM)), out hit, MaxDistance);
-            if(cur_fire_dispersion_AIM < max_fire_dispersion_AIM)
+            if (cur_fire_dispersion_AIM < max_fire_dispersion_AIM)
                 cur_fire_dispersion_AIM += fire_dispersion_inc_AIM;
         }
         else
@@ -126,7 +128,7 @@ public class Weapon : MonoBehaviour
                     if (aimHitRoutine != null)
                         StopCoroutine(aimHitRoutine);
                     aimHitRoutine = StartCoroutine(AIMHitDynamic());
-                    hit.collider.GetComponent<IDamageable>().TakeDamage(Damage);
+                    hit.collider.GetComponent<IDamageable>().TakeDamage(Damage,damageType);
                 }
             }
             GameObject go;
@@ -161,17 +163,17 @@ public class Weapon : MonoBehaviour
 
         try
         {
-            hit.collider.GetComponent<Rigidbody>().AddForce(hit.point* hitImpulse, ForceMode.Impulse);
+            hit.collider.GetComponent<Rigidbody>().AddForce(hit.point * hitImpulse, ForceMode.Impulse);
         }
         catch
         {
             Debug.Log("Can`t");
         }
-       relaxRoutine = StartCoroutine(RelaxCamera(fs));
+        relaxRoutine = StartCoroutine(RelaxCamera(fs));
         //уменьшение патронов в магазине и перезарядка
         CurMagSize--;
         otdacha();
-        
+
 
     }
 
@@ -187,18 +189,18 @@ public class Weapon : MonoBehaviour
     IEnumerator RelaxCamera(ForShoot fs)
     {
         yield return new WaitForSeconds(delay_before_return);
-        while (cur_fire_dispersion > fire_dispersion_base )
+        while (cur_fire_dispersion > fire_dispersion_base)
         {
             yield return new WaitForSeconds(relax_speed);
             cur_fire_dispersion -= fire_dispersion_inc;
             fs();
         }
-        while( cur_fire_dispersion_AIM > fire_dispersion_base_AIM)
+        while (cur_fire_dispersion_AIM > fire_dispersion_base_AIM)
         {
             yield return new WaitForSeconds(relax_speed);
             cur_fire_dispersion_AIM -= fire_dispersion_inc_AIM;
         }
-        while(cam_dispersion>base_cam_dispersion)
+        while (cam_dispersion > base_cam_dispersion)
         {
             yield return new WaitForSeconds(relax_speed);
             cam_dispersion -= cam_dispersion_inc;
@@ -211,7 +213,7 @@ public class Weapon : MonoBehaviour
     {
         AIMHit.gameObject.SetActive(true);
         int i = 40;
-        while (i>30)
+        while (i > 30)
         {
             AIMHit.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, i);
             AIMHit.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, i);
